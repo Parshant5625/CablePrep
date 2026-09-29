@@ -1,0 +1,1034 @@
+/* ==========================================================================
+   CablePrep HMI — hmi.css
+   Industrial HMI component library: reusable status system, panels, tiles,
+   buttons, forms, tables, placeholders and per-screen layouts.
+   Depends on the design tokens defined in css/style.css.
+   ========================================================================== */
+
+/* ---------- Screen header ---------- */
+.screen-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.screen-title {
+    font-size: 17px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+.screen-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+}
+
+/* ==========================================================================
+   STATUS SYSTEM — reusable visual states for all screens.
+   Variants: ready, running, stopped, warning, fault,
+             pass, reject, waiting, idle, complete
+   (No machine logic behind them in Phase 1 — design system only.)
+   ========================================================================== */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+
+.status-badge--ready    { color: #6ff0ab; background: rgba(46, 204, 113, 0.10); border-color: rgba(46, 204, 113, 0.45); }
+.status-badge--running  { color: #7dd7ff; background: rgba(56, 189, 248, 0.10); border-color: rgba(56, 189, 248, 0.45); }
+.status-badge--stopped  { color: #ff8296; background: rgba(244, 63, 94, 0.10);  border-color: rgba(244, 63, 94, 0.45); }
+.status-badge--warning  { color: #ffd28a; background: rgba(245, 158, 11, 0.10); border-color: rgba(245, 158, 11, 0.45); }
+.status-badge--fault    { color: #ff9b9b; background: rgba(239, 68, 68, 0.16);  border-color: rgba(239, 68, 68, 0.60); }
+.status-badge--pass     { color: #6ff0ab; background: rgba(46, 204, 113, 0.10); border-color: rgba(46, 204, 113, 0.45); }
+.status-badge--reject   { color: #ff9b9b; background: rgba(239, 68, 68, 0.16);  border-color: rgba(239, 68, 68, 0.60); }
+.status-badge--waiting  { color: #c9b6ff; background: rgba(167, 139, 250, 0.10); border-color: rgba(167, 139, 250, 0.45); }
+.status-badge--idle     { color: #b7c2d0; background: rgba(148, 163, 184, 0.10); border-color: rgba(148, 163, 184, 0.40); }
+.status-badge--complete { color: #6ff0ab; background: rgba(46, 204, 113, 0.10); border-color: rgba(46, 204, 113, 0.45); }
+
+.status-badge--sm {
+    padding: 2px 7px;
+    font-size: 10px;
+}
+
+/* Colored status text (status bar, inline values) */
+.status-text--ready    { color: var(--status-ready); }
+.status-text--running  { color: var(--status-running); }
+.status-text--stopped  { color: var(--status-stopped); }
+.status-text--warning  { color: var(--status-warning); }
+.status-text--fault    { color: var(--status-fault); }
+.status-text--pass     { color: var(--status-pass); }
+.status-text--reject   { color: var(--status-reject); }
+.status-text--waiting  { color: var(--status-waiting); }
+.status-text--idle     { color: var(--status-idle); }
+.status-text--complete { color: var(--status-ready); }
+
+/* Status indicator dot (header) */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--status-idle);
+    flex: 0 0 auto;
+}
+
+.status-dot--ready   { background: var(--status-ready);   animation: statusPulse 2.6s ease-in-out infinite; }
+.status-dot--running { background: var(--status-running); animation: statusPulse 2.6s ease-in-out infinite; }
+.status-dot--stopped { background: var(--status-stopped); }
+.status-dot--warning { background: var(--status-warning); animation: statusPulse 2.6s ease-in-out infinite; }
+.status-dot--fault   { background: var(--status-fault);   animation: statusPulse 1.2s ease-in-out infinite; }
+.status-dot--pass    { background: var(--status-pass); }
+.status-dot--reject  { background: var(--status-reject); }
+.status-dot--waiting { background: var(--status-waiting); }
+.status-dot--idle    { background: var(--status-idle); }
+
+@keyframes statusPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-dot--ready,
+    .status-dot--running,
+    .status-dot--warning,
+    .status-dot--fault {
+        animation: none;
+    }
+    .progress-fill {
+        transition: none;
+    }
+}
+
+/* Tag (e.g. DEMO DATA) */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    border: 1px solid transparent;
+}
+
+.tag--demo {
+    color: var(--accent-amber);
+    background: rgba(240, 160, 32, 0.10);
+    border-color: rgba(240, 160, 32, 0.50);
+}
+
+/* Mode badge (operating mode is not a machine status) */
+.mode-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: rgba(56, 168, 224, 0.10);
+    border: 1px solid rgba(56, 168, 224, 0.45);
+    border-radius: 2px;
+}
+
+/* ---------- Panels ---------- */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.panel + .panel {
+    margin-top: 16px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-panel-alt);
+    border-bottom: 1px solid var(--border);
+    border-radius: 4px 4px 0 0;
+}
+
+.panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text);
+}
+
+.panel-note {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-align: right;
+}
+
+.panel-body {
+    padding: 14px;
+}
+
+.panel-body--flush {
+    padding: 0;
+}
+
+.panel-footer {
+    padding: 9px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-dim);
+}
+
+.panel-text {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+
+.panel-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.panel-row .panel {
+    margin-top: 0;
+}
+
+.panel-row + .panel {
+    margin-top: 0;
+}
+
+/* ---------- Dashboard tiles ---------- */
+.tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 88px;
+    padding: 12px 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.tile-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+}
+
+.tile-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    flex: 1;
+}
+
+.tile-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+
+/* Progress bar */
+.progress-track {
+    display: block;
+    height: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+}
+
+/* ---------- Buttons ---------- */
+.control-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 116px;
+    height: 42px;
+    padding: 0 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: filter 0.12s ease, background-color 0.12s ease;
+}
+
+.btn:hover {
+    filter: brightness(1.14);
+}
+
+.btn:active {
+    filter: brightness(0.92);
+}
+
+.btn--start {
+    background: #178a4b;
+    border-color: #2ecc71;
+    color: #eafff2;
+}
+
+.btn--stop {
+    background: #a51f28;
+    border-color: #f43f5e;
+    color: #ffeef1;
+}
+
+.btn--reset {
+    background: transparent;
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
+}
+
+.btn--primary {
+    background: #14618c;
+    border-color: var(--accent);
+    color: #eaf7ff;
+}
+
+/* Feedback lines under control/action bars */
+.control-feedback {
+    min-height: 18px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.control-feedback--inline {
+    margin-top: 0;
+    align-self: center;
+}
+
+/* Process badge on dashboard */
+.process-badge {
+    padding: 8px 18px;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+}
+
+.panel-body--process {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    min-height: 120px;
+}
+
+/* ---------- Configuration form ---------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+    gap: 14px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+}
+
+.form-control {
+    height: 38px;
+    padding: 0 10px;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    font-size: 13.5px;
+}
+
+.form-control:hover {
+    border-color: #44536a;
+}
+
+.form-control:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--text-faint);
+}
+
+select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238b99aa' stroke-width='1.5'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
+
+select.form-control option {
+    background: var(--bg-panel);
+    color: var(--text);
+}
+
+.form-hint {
+    margin-top: 14px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    line-height: 1.5;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    padding: 14px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* ---------- Data tables ---------- */
+.table-wrap {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.data-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    background: var(--bg-panel-alt);
+    border-bottom: 1px solid var(--border-strong);
+}
+
+.data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.data-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.cell-mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+}
+
+.cell-strong {
+    font-weight: 600;
+}
+
+.cell-center {
+    text-align: center;
+}
+
+/* ---------- Machine monitor ---------- */
+.monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+    gap: 12px;
+}
+
+.monitor-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 11px 13px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    min-height: 74px;
+}
+
+.monitor-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+}
+
+.monitor-value {
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text);
+}
+
+.monitor-value--mono {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    letter-spacing: 0.05em;
+}
+
+.monitor-value--ok {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--status-ready);
+}
+
+.monitor-value--fault {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--status-fault);
+}
+
+/* Documented integration point (code sample) */
+.code-block {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #a9c7de;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+/* ---------- Placeholder boxes (visualization areas) ---------- */
+.placeholder-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    background: var(--bg-input);
+    border: 1px dashed var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-faint);
+}
+
+.placeholder-box--machine {
+    min-height: 230px;
+}
+
+.placeholder-box--specimen {
+    min-height: 200px;
+}
+
+.placeholder-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--text-dim);
+}
+
+.placeholder-text {
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 430px;
+}
+
+/* ---------- Inspection screen ---------- */
+.panel-body--result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 200px;
+    text-align: center;
+}
+
+.result-badge {
+    padding: 10px 24px;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+}
+
+/* ---------- Reports screen ---------- */
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.report-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.report-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-panel-alt);
+    border-bottom: 1px solid var(--border);
+    border-radius: 4px 4px 0 0;
+}
+
+.report-card-body {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 14px;
+}
+
+.report-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 12.5px;
+    border-bottom: 1px dashed var(--border);
+}
+
+.report-line:last-child {
+    border-bottom: 0;
+}
+
+.report-line-key {
+    color: var(--text-dim);
+}
+
+/* ==========================================================================
+   PHASE 2 — fault banner, process progress stepper
+   ========================================================================== */
+
+/* Global fault banner (visible on every screen while faulted) */
+.fault-banner {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: rgba(120, 20, 20, 0.28);
+    border: 1px solid rgba(239, 68, 68, 0.65);
+    border-left: 4px solid var(--status-fault);
+    border-radius: 3px;
+}
+
+.fault-banner[hidden] {
+    display: none;
+}
+
+.fault-banner-msg {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ff9b9b;
+}
+
+.fault-banner-cond {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text);
+}
+
+.fault-banner-hint {
+    margin-left: auto;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+/* Process progress stepper (10 steps: ✓ done, ● current, ○ pending) */
+.step-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 11px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    min-width: 0;
+}
+
+.step-mark {
+    flex: 0 0 auto;
+    width: 16px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-faint);
+}
+
+.step-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.step-item.is-done {
+    border-color: rgba(46, 204, 113, 0.40);
+    color: #9fe8c0;
+}
+
+.step-item.is-done .step-mark {
+    color: var(--status-ready);
+}
+
+.step-item.is-current {
+    background: rgba(56, 189, 248, 0.10);
+    border-color: rgba(56, 189, 248, 0.65);
+    color: #d9f2ff;
+    font-weight: 600;
+}
+
+.step-item.is-current .step-mark {
+    color: var(--status-running);
+}
+
+.step-item.is-fault {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.70);
+    color: #ff9b9b;
+    font-weight: 600;
+}
+
+.step-item.is-fault .step-mark {
+    color: var(--status-fault);
+}
+
+/* Small summary line under the dashboard process badge */
+.step-summary {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+}
+
+/* ==========================================================================
+   PHASE 2 — machine visualization (conceptual SVG machine line)
+   ========================================================================== */
+.machine-viz {
+    display: block;
+}
+
+.machine-viz svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--bg-input);
+    border: 1px dashed var(--border-strong);
+    border-radius: 4px;
+}
+
+/* Chassis turns red while a fault is active */
+.mc-chassis {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 1.5;
+}
+
+.machine-viz.is-fault .mc-chassis {
+    stroke: rgba(239, 68, 68, 0.75);
+    stroke-width: 2;
+}
+
+/* Cable rail + cable fill (width is driven by position) */
+.mc-rail {
+    stroke: #2b3644;
+    stroke-width: 6;
+    stroke-linecap: round;
+}
+
+.mc-cable {
+    fill: #5b6b7d;
+}
+
+.mc-cable-flow {
+    stroke: #8fa3b8;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 12 9;
+    opacity: 0;
+}
+
+.machine-viz.is-feeding .mc-cable-flow {
+    opacity: 1;
+    animation: mcFlow 0.5s linear infinite;
+}
+
+.machine-viz.is-feeding .mc-cable {
+    fill: var(--accent);
+}
+
+@keyframes mcFlow {
+    to { stroke-dashoffset: -21; }
+}
+
+/* Stations */
+.mc-station-box {
+    fill: rgba(21, 29, 38, 0.92);
+    stroke: var(--border);
+    stroke-width: 1.5;
+}
+
+.mc-label {
+    fill: var(--text-faint);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-anchor: middle;
+}
+
+.mc-led {
+    fill: #465363;
+}
+
+.mc-station.is-done .mc-station-box {
+    stroke: rgba(46, 204, 113, 0.45);
+}
+
+.mc-station.is-done .mc-led {
+    fill: rgba(46, 204, 113, 0.75);
+}
+
+.mc-station.is-done .mc-label {
+    fill: #7fbf9d;
+}
+
+.mc-station.is-active .mc-station-box {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 4px rgba(56, 168, 224, 0.45));
+}
+
+.mc-station.is-active .mc-led {
+    fill: var(--status-running);
+    animation: mcLedPulse 1s ease-in-out infinite;
+}
+
+.mc-station.is-active .mc-label {
+    fill: #d9f2ff;
+    font-weight: 700;
+}
+
+.mc-station.is-fault .mc-station-box {
+    stroke: var(--status-fault);
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5));
+}
+
+.mc-station.is-fault .mc-led {
+    fill: var(--status-fault);
+    animation: mcLedPulse 0.7s ease-in-out infinite;
+}
+
+.mc-station.is-fault .mc-label {
+    fill: #ff9b9b;
+    font-weight: 700;
+}
+
+@keyframes mcLedPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+
+/* Station internals */
+.mc-spool, .mc-spool-core, .mc-roller, .mc-align-wedge, .mc-meas-box,
+.mc-meas-tick, .mc-meas-probe, .mc-blade, .mc-heat, .mc-press,
+.mc-cam, .mc-cam-lens, .mc-scan, .mc-tray {
+    fill: none;
+    stroke: #7c8b9c;
+    stroke-width: 2;
+}
+
+.mc-spool { stroke-width: 2.5; }
+.mc-spool-core { fill: #7c8b9c; }
+.mc-meas-tick, .mc-meas-probe, .mc-scan { stroke-width: 1.5; }
+.mc-heat, .mc-scan { stroke-dasharray: 6 4; }
+
+/* Feed rollers spin while the cable moves */
+.machine-viz.is-feeding .mc-roller {
+    animation: mcRollerSpin 0.9s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@keyframes mcRollerSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Cutting blade chops while the cut station is active */
+.mc-station[data-station="cut"].is-active .mc-blade {
+    animation: mcChop 0.5s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: top center;
+}
+
+@keyframes mcChop {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(10px); }
+}
+
+/* Inspection lens scans while the inspection station is active */
+.mc-station[data-station="inspect"].is-active .mc-cam-lens {
+    animation: mcLedPulse 0.8s ease-in-out infinite;
+}
+
+/* Output lamps */
+.mc-lamp-accept { fill: #3a4653; stroke: none; }
+.mc-lamp-reject { fill: #3a4653; stroke: none; }
+
+.mc-station.is-accept .mc-lamp-accept {
+    fill: var(--status-pass);
+    animation: mcLedPulse 1s ease-in-out infinite;
+}
+
+.mc-station.is-reject .mc-lamp-reject {
+    fill: var(--status-reject);
+    animation: mcLedPulse 1s ease-in-out infinite;
+}
+
+.viz-disclaimer {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.03em;
+}
+
+.viz-disclaimer strong {
+    color: var(--accent-amber);
+    letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+   PHASE 2 — monitor extras, fault-demo button, reduced motion
+   ========================================================================== */
+
+/* Status/process cells that span two columns (progress bars) */
+.monitor-cell--wide {
+    grid-column: span 2;
+}
+
+.monitor-cell--wide .progress-track {
+    width: 100%;
+}
+
+/* Plain (non-badge) run/fault indicator values */
+.monitor-value--run {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--status-ready);
+}
+
+.monitor-value--stop {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    color: var(--status-stopped);
+}
+
+/* Fault demonstration button (demo panel on the monitor screen) */
+.btn--fault {
+    background: transparent;
+    border-color: rgba(239, 68, 68, 0.75);
+    color: #ff9b9b;
+}
+
+.btn--fault:hover {
+    background: rgba(239, 68, 68, 0.12);
+    filter: none;
+}
+
+/* Extend the reduced-motion guard to the Phase 2 animations */
+@media (prefers-reduced-motion: reduce) {
+    .machine-viz.is-feeding .mc-cable-flow,
+    .machine-viz.is-feeding .mc-roller,
+    .mc-station[data-station="cut"].is-active .mc-blade,
+    .mc-station.is-active .mc-led,
+    .mc-station.is-fault .mc-led,
+    .mc-station.is-accept .mc-lamp-accept,
+    .mc-station.is-reject .mc-lamp-reject,
+    .mc-station[data-station="inspect"].is-active .mc-cam-lens {
+        animation: none;
+    }
+}
+
+
+
+
+
+
