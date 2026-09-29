@@ -803,7 +803,12 @@ const Simulation = (function () {
       mode = 'IDLE';
     } else if (state !== 'FAULT') {
       mode = operationMode === 'MANUAL' ? 'MANUAL' : 'RUNNING';
-      if (operationMode === 'AUTOMATIC' && !running) { startTimer(); }
+      if (operationMode === 'MANUAL') {
+        manualStepRequested = false;
+        stopTimer();
+      } else if (!running) {
+        startTimer();
+      }
     }
     log('MODE', 'Operating mode = ' + operationMode);
     return operationMode;
