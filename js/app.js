@@ -432,9 +432,15 @@
                 accepted: data.result === 'ACCEPT' ? 1 : 0,
                 rejected: data.result === 'REJECT' ? 1 : 0,
                 date: formatDate(new Date()),
-                status: 'COMPLETE'
+                status: 'COMPLETE',
+                lastResult: data.result
             });
         }
+
+        if (cp.Reports && typeof cp.Reports.applyMachineData === 'function') {
+            cp.Reports.applyMachineData(data);
+        }
+
         lastData = data;
     };
 
