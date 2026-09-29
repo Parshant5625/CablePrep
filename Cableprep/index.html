@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>CablePrep — Smart Cable Specimen Preparation &amp; Inspection System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/hmi.css">
+</head>
+<body>
+    <div class="hmi-app">
+
+        <!-- ==================== HEADER ==================== -->
+        <header class="hmi-header">
+            <div class="hmi-brand">
+                <span class="brand-block" aria-hidden="true">CP</span>
+                <div class="brand-text">
+                    <span class="brand-title">CABLEPREP</span>
+                    <span class="brand-subtitle">Smart Cable Specimen Preparation &amp; Inspection System</span>
+                </div>
+            </div>
+
+            <div class="hmi-header-info">
+                <div class="header-indicator" title="System status">
+                    <span class="status-dot status-dot--ready" id="headerStatusDot"></span>
+                    <span class="header-indicator-text" id="headerStatusText">READY</span>
+                </div>
+                <time class="header-clock" id="headerClock">--:--:--</time>
+                <span class="header-version">HMI v1.0</span>
+            </div>
+        </header>
+
+        <!-- ==================== SIDEBAR + MAIN CONTENT ==================== -->
+        <div class="hmi-body">
+            <nav class="hmi-sidebar" aria-label="Primary navigation">
+                <ul class="nav-list">
+                    <li><button type="button" class="nav-item is-active" data-screen="dashboard" aria-current="page"><span class="nav-index">01</span><span class="nav-label">Dashboard</span></button></li>
+                    <li><button type="button" class="nav-item" data-screen="config"><span class="nav-index">02</span><span class="nav-label">Test Configuration</span></button></li>
+                    <li><button type="button" class="nav-item" data-screen="monitor"><span class="nav-index">03</span><span class="nav-label">Machine Monitor</span></button></li>
+                    <li><button type="button" class="nav-item" data-screen="inspection"><span class="nav-index">04</span><span class="nav-label">Inspection</span></button></li>
+                    <li><button type="button" class="nav-item" data-screen="history"><span class="nav-index">05</span><span class="nav-label">History</span></button></li>
+                    <li><button type="button" class="nav-item" data-screen="reports"><span class="nav-index">06</span><span class="nav-label">Reports</span></button></li>
+                </ul>
+                <div class="sidebar-footer">
+                    <span class="sidebar-footer-title">PHASE 1</span>
+                    <span class="sidebar-footer-text">HMI shell only. Machine simulation not connected.</span>
+                </div>
+            </nav>
+
+            <main class="hmi-main" id="mainContent">
+                <!-- Global fault banner — visible on every screen while faulted -->
+                <div class="fault-banner" id="faultBanner" role="alert" hidden>
+                    <span class="status-badge status-badge--fault">FAULT</span>
+                    <span class="fault-banner-msg" id="faultMessage">Machine fault</span>
+                    <span class="fault-banner-cond" id="faultCondition">—</span>
+                    <span class="fault-banner-hint">Press RESET to clear the fault</span>
+                </div>
+
+                <!-- ==================== SCREEN: DASHBOARD ==================== -->
+                <section class="screen is-active" id="screen-dashboard" role="region" aria-label="Dashboard">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Dashboard</h1>
+                        <p class="screen-subtitle">Current batch, specimen and machine condition</p>
+                    </div>
+
+                    <!-- Key figures -->
+                    <div class="tile-grid">
+                        <div class="tile">
+                            <span class="tile-label">System Status</span>
+                            <span class="tile-body"><span class="status-badge status-badge--ready" id="dashSystemStatus">READY</span></span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Current Batch</span>
+                            <span class="tile-body tile-value" id="dashCurrentBatch">CP-001</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Current Specimen</span>
+                            <span class="tile-body tile-value" id="dashCurrentSpecimen">01 / 04</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Machine State</span>
+                            <span class="tile-body"><span class="status-badge status-badge--idle" id="dashMachineState">IDLE</span></span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Operating Mode</span>
+                            <span class="tile-body"><span class="mode-badge" id="dashOperatingMode">AUTOMATIC</span></span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Process Progress</span>
+                            <span class="tile-body">
+                                <span class="tile-value" id="dashProgressText">0%</span>
+                                <span class="progress-track"><span class="progress-fill" id="dashProgressBar" style="width: 0%;"></span></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Live machine values (Phase 2) -->
+                    <div class="tile-grid tile-grid--live">
+                        <div class="tile">
+                            <span class="tile-label">Cable Position</span>
+                            <span class="tile-body tile-value" id="dashPosition">0 mm</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Feed Speed</span>
+                            <span class="tile-body tile-value" id="dashSpeed">0 mm/s</span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Safety</span>
+                            <span class="tile-body"><span class="status-badge status-badge--ready" id="dashSafety">OK</span></span>
+                        </div>
+                        <div class="tile">
+                            <span class="tile-label">Result</span>
+                            <span class="tile-body"><span class="status-badge status-badge--waiting" id="dashResult">WAITING</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Controls + current process -->
+                    <div class="panel-row">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2 class="panel-title">Machine Control</h2>
+                                <span class="panel-note">UI controls only — Phase 1</span>
+                            </div>
+                            <div class="panel-body">
+                                <div class="control-bar">
+                                    <button type="button" class="btn btn--start" data-action="start">START</button>
+                                    <button type="button" class="btn btn--stop" data-action="stop">STOP</button>
+                                    <button type="button" class="btn btn--reset" data-action="reset">RESET</button>
+                                </div>
+                                <p class="control-feedback" id="controlFeedback" role="status" aria-live="polite">Controls are not connected to machine logic in Phase 1.</p>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2 class="panel-title">Current Process</h2>
+                                <span class="panel-note">Driven by state machine (later phase)</span>
+                            </div>
+                            <div class="panel-body panel-body--process">
+                                <span class="process-badge status-badge status-badge--idle" id="dashCurrentProcess">IDLE</span>
+                                <p class="step-summary" id="dashStepText">Step — / 10</p>
+                                <p class="panel-text" id="dashProcessHint">No process is active. Press START to run a demo preparation cycle.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Machine visualization placeholder -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Machine Overview</h2>
+                            <span class="panel-note">Conceptual SVG — demo values</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="machine-viz" id="machineViz">
+                                <svg viewBox="0 0 1100 240" role="img" aria-label="Conceptual cable preparation machine">
+                                    <!-- Machine chassis -->
+                                    <rect class="mc-chassis" x="8" y="14" width="1084" height="180" rx="4"></rect>
+
+                                    <!-- 1. Cable input -->
+                                    <g class="mc-station" id="mcStInput" data-station="input">
+                                        <rect class="mc-station-box" x="22" y="54" width="96" height="96" rx="3"></rect>
+                                        <circle class="mc-spool" cx="70" cy="102" r="22"></circle>
+                                        <circle class="mc-spool-core" cx="70" cy="102" r="7"></circle>
+                                        <circle class="mc-led" cx="108" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="70" y="170">CABLE INPUT</text>
+                                    </g>
+
+                                    <!-- 2. Feed rollers -->
+                                    <g class="mc-station" id="mcStFeed" data-station="feed">
+                                        <rect class="mc-station-box" x="147" y="54" width="96" height="96" rx="3"></rect>
+                                        <circle class="mc-roller" cx="195" cy="82" r="14"></circle>
+                                        <circle class="mc-roller" cx="195" cy="124" r="14"></circle>
+                                        <circle class="mc-led" cx="233" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="195" y="170">FEED ROLLERS</text>
+                                    </g>
+
+                                    <!-- 3. Alignment -->
+                                    <g class="mc-station" id="mcStAlign" data-station="align">
+                                        <rect class="mc-station-box" x="267" y="54" width="96" height="96" rx="3"></rect>
+                                        <polygon class="mc-align-wedge" points="301,72 329,72 315,94"></polygon>
+                                        <polygon class="mc-align-wedge" points="301,136 329,136 315,114"></polygon>
+                                        <circle class="mc-led" cx="353" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="315" y="170">ALIGNMENT</text>
+                                    </g>
+
+                                    <!-- 4. Measurement -->
+                                    <g class="mc-station" id="mcStMeasure" data-station="measure">
+                                        <rect class="mc-station-box" x="387" y="54" width="96" height="96" rx="3"></rect>
+                                        <rect class="mc-meas-box" x="409" y="70" width="52" height="34" rx="2"></rect>
+                                        <line class="mc-meas-tick" x1="422" y1="70" x2="422" y2="86"></line>
+                                        <line class="mc-meas-tick" x1="435" y1="70" x2="435" y2="92"></line>
+                                        <line class="mc-meas-tick" x1="448" y1="70" x2="448" y2="86"></line>
+                                        <line class="mc-meas-probe" x1="435" y1="104" x2="435" y2="124"></line>
+                                        <circle class="mc-led" cx="473" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="435" y="170">MEASUREMENT</text>
+                                    </g>
+
+                                    <!-- 5. Cutting -->
+                                    <g class="mc-station" id="mcStCut" data-station="cut">
+                                        <rect class="mc-station-box" x="507" y="54" width="96" height="96" rx="3"></rect>
+                                        <polygon class="mc-blade" points="539,68 571,68 555,100"></polygon>
+                                        <circle class="mc-led" cx="593" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="555" y="170">CUTTING</text>
+                                    </g>
+
+                                    <!-- 6. Preparation -->
+                                    <g class="mc-station" id="mcStPrepare" data-station="prepare">
+                                        <rect class="mc-station-box" x="627" y="54" width="96" height="96" rx="3"></rect>
+                                        <path class="mc-heat" d="M651 84 l10 -12 l10 12 l10 -12 l10 12"></path>
+                                        <line class="mc-meas-probe" x1="651" y1="96" x2="699" y2="96"></line>
+                                        <circle class="mc-led" cx="713" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="675" y="170">PREPARATION</text>
+                                    </g>
+
+                                    <!-- 7. Forming -->
+                                    <g class="mc-station" id="mcStForm" data-station="form">
+                                        <rect class="mc-station-box" x="747" y="54" width="96" height="96" rx="3"></rect>
+                                        <rect class="mc-press" x="769" y="66" width="52" height="24" rx="2"></rect>
+                                        <rect class="mc-press" x="769" y="118" width="52" height="24" rx="2"></rect>
+                                        <circle class="mc-led" cx="833" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="795" y="170">FORMING</text>
+                                    </g>
+
+                                    <!-- 8. Inspection -->
+                                    <g class="mc-station" id="mcStInspect" data-station="inspect">
+                                        <rect class="mc-station-box" x="867" y="54" width="96" height="96" rx="3"></rect>
+                                        <rect class="mc-cam" x="889" y="64" width="52" height="34" rx="3"></rect>
+                                        <circle class="mc-cam-lens" cx="915" cy="106" r="10"></circle>
+                                        <line class="mc-scan" x1="915" y1="118" x2="915" y2="134"></line>
+                                        <circle class="mc-led" cx="953" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="915" y="170">INSPECTION</text>
+                                    </g>
+
+                                    <!-- 9. Output -->
+                                    <g class="mc-station" id="mcStOutput" data-station="output">
+                                        <rect class="mc-station-box" x="982" y="54" width="96" height="96" rx="3"></rect>
+                                        <circle class="mc-lamp-accept" cx="1012" cy="78" r="8"></circle>
+                                        <circle class="mc-lamp-reject" cx="1048" cy="78" r="8"></circle>
+                                        <path class="mc-tray" d="M1000 110 h60 l-8 28 h-44 z"></path>
+                                        <circle class="mc-led" cx="1068" cy="64" r="4"></circle>
+                                        <text class="mc-label" x="1030" y="170">OUTPUT</text>
+                                    </g>
+
+                                    <!-- Cable rail + live cable (drawn above stations) -->
+                                    <line class="mc-rail" x1="70" y1="102" x2="1030" y2="102"></line>
+                                    <rect class="mc-cable" id="mcCableFill" x="70" y="97" width="0" height="10" rx="5"></rect>
+                                    <line class="mc-cable-flow" x1="70" y1="102" x2="1030" y2="102"></line>
+                                </svg>
+                                <p class="viz-disclaimer">Conceptual visualization — <strong>DEMO PARAMETERS, NOT VERIFIED IS 10810 VALUES</strong>. Simulation values only.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== SCREEN: TEST CONFIGURATION ==================== -->
+                <section class="screen" id="screen-config" role="region" aria-label="Test Configuration">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Test Configuration</h1>
+                        <p class="screen-subtitle">Standard, material, specimen and preparation parameters</p>
+                    </div>
+
+                    <form class="config-form" id="configForm" novalidate>
+                        <div class="panel-row panel-row--config">
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <h2 class="panel-title">Batch Settings</h2>
+                                    <span class="panel-note">Placeholder options</span>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="form-grid">
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgStandard">Standard</label>
+                                            <select class="form-control" id="cfgStandard">
+                                                <option value="">Select Standard</option>
+                                                <option value="IS10810">IS 10810 (placeholder)</option>
+                                                <option value="CUSTOM">Custom / Generic</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgMaterial">Material</label>
+                                            <select class="form-control" id="cfgMaterial">
+                                                <option value="">Select Material</option>
+                                                <option value="PVC">PVC</option>
+                                                <option value="XLPE">XLPE</option>
+                                                <option value="RUBBER">Rubber</option>
+                                                <option value="SILICONE">Silicone</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgSpecimenType">Specimen Type</label>
+                                            <select class="form-control" id="cfgSpecimenType">
+                                                <option value="">Select Specimen Type</option>
+                                                <option value="STRAIGHT">Straight Specimen</option>
+                                                <option value="BEND">Bent Specimen</option>
+                                                <option value="CUSTOM">Custom Specimen</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgQuantity">Quantity</label>
+                                            <input class="form-control" type="number" id="cfgQuantity" min="1" max="99" step="1" value="4">
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgMode">Operating Mode</label>
+                                            <select class="form-control" id="cfgMode">
+                                                <option value="AUTOMATIC" selected>Automatic</option>
+                                                <option value="MANUAL">Manual</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <h2 class="panel-title">Preparation Parameters</h2>
+                                    <span class="panel-note">Generic values only</span>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="form-grid">
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgLength">Length (mm)</label>
+                                            <input class="form-control" type="number" id="cfgLength" min="0" step="any" placeholder="Enter length">
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgWidth">Width (mm)</label>
+                                            <input class="form-control" type="number" id="cfgWidth" min="0" step="any" placeholder="Enter width">
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="form-label" for="cfgThickness">Thickness (mm)</label>
+                                            <input class="form-control" type="number" id="cfgThickness" min="0" step="any" placeholder="Enter thickness">
+                                        </div>
+                                    </div>
+                                    <p class="form-hint">Generic placeholder fields — <strong>DEMO PARAMETERS, NOT VERIFIED IS 10810 VALUES</strong>. Standard-specific dimensions and tolerances are intentionally not defined. Length feeds the demo machine's target travel; quantity and operating mode are applied at START.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn--primary" id="btnSaveConfig">SAVE CONFIGURATION</button>
+                            <p class="control-feedback control-feedback--inline" id="configFeedback" role="status" aria-live="polite"></p>
+                        </div>
+                    </form>
+                </section>
+
+
+                <!-- ==================== SCREEN: MACHINE MONITOR ==================== -->
+                <section class="screen" id="screen-monitor" role="region" aria-label="Machine Monitor">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Machine Monitor</h1>
+                        <p class="screen-subtitle">Machine and sensor signals — placeholder data pending simulation link</p>
+                    </div>
+
+                    <!-- MACHINE STATUS -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Machine Status</h2>
+                            <span class="panel-note">Live — mock data provider</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="monitor-grid">
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Current State</span>
+                                    <span class="monitor-value"><span class="status-badge status-badge--idle" id="monMachineState">IDLE</span></span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Running / Stopped</span>
+                                    <span class="monitor-value monitor-value--stop" id="monRunStatus">STOPPED</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Fault / Normal</span>
+                                    <span class="monitor-value monitor-value--ok" id="monFaultStatus">NORMAL</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Current Step</span>
+                                    <span class="monitor-value monitor-value--mono" id="monStepStatus">— / 10</span>
+                                </div>
+                                <div class="monitor-cell monitor-cell--wide">
+                                    <span class="monitor-label">Overall Progress</span>
+                                    <span class="monitor-value monitor-value--mono" id="monProgressPct">0%</span>
+                                    <span class="progress-track"><span class="progress-fill" id="monProgressBar" style="width: 0%;"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SENSORS -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Sensors</h2>
+                            <span class="panel-note">Live simulation values</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="monitor-grid">
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Cable Position</span>
+                                    <span class="monitor-value monitor-value--mono" id="monPosition">0 mm</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Feed Speed</span>
+                                    <span class="monitor-value monitor-value--mono" id="monSpeed">0 mm/s</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Encoder</span>
+                                    <span class="monitor-value monitor-value--mono" id="monEncoder">0</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Cable Detected</span>
+                                    <span class="monitor-value" id="monCableDetected">NO</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Alignment</span>
+                                    <span class="monitor-value" id="monAlignment">NOT CHECKED</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Cut Position</span>
+                                    <span class="monitor-value" id="monCutPosition">NOT READY</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Motor Status</span>
+                                    <span class="monitor-value" id="monMotor">STOPPED</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Safety Interlock</span>
+                                    <span class="monitor-value monitor-value--ok" id="monSafety">OK</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Preparation</span>
+                                    <span class="monitor-value" id="monPreparation">NOT READY</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROCESS -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Process</h2>
+                            <span class="panel-note">Cycle tracking</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="monitor-grid">
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Current Operation</span>
+                                    <span class="monitor-value" id="monOperation">IDLE</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Current Step</span>
+                                    <span class="monitor-value" id="monStepLabel">—</span>
+                                </div>
+                                <div class="monitor-cell">
+                                    <span class="monitor-label">Elapsed Time</span>
+                                    <span class="monitor-value monitor-value--mono" id="monElapsed">00:00.0</span>
+                                </div>
+                                <div class="monitor-cell monitor-cell--wide">
+                                    <span class="monitor-label">Step Progress</span>
+                                    <span class="monitor-value monitor-value--mono" id="monStepProgressPct">0%</span>
+                                    <span class="progress-track"><span class="progress-fill" id="monStepProgressBar" style="width: 0%;"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAULT DEMONSTRATION -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Fault Demonstration</h2>
+                            <span class="panel-note">Phase 2 — demo only</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="control-bar">
+                                <button type="button" class="btn btn--fault" data-fault="misalign">MISALIGNMENT</button>
+                                <button type="button" class="btn btn--fault" data-fault="safety">SAFETY INTERLOCK</button>
+                                <button type="button" class="btn btn--fault" data-fault="sensor">SENSOR FAILURE</button>
+                            </div>
+                            <p class="control-feedback" id="faultDemoFeedback">Inject a demo fault to verify HMI fault handling. RESET clears the fault.</p>
+                        </div>
+                    </div>
+
+                    <!-- PROCESS PROGRESS -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Process Progress</h2>
+                            <span class="panel-note">10-step cycle</span>
+                        </div>
+                        <div class="panel-body">
+                            <ol class="step-list" id="processStepper">
+                                <li class="step-item" data-step="0"><span class="step-mark">○</span><span class="step-name">Initialize</span></li>
+                                <li class="step-item" data-step="1"><span class="step-mark">○</span><span class="step-name">Detect Cable</span></li>
+                                <li class="step-item" data-step="2"><span class="step-mark">○</span><span class="step-name">Feed</span></li>
+                                <li class="step-item" data-step="3"><span class="step-mark">○</span><span class="step-name">Align</span></li>
+                                <li class="step-item" data-step="4"><span class="step-mark">○</span><span class="step-name">Measure</span></li>
+                                <li class="step-item" data-step="5"><span class="step-mark">○</span><span class="step-name">Cut</span></li>
+                                <li class="step-item" data-step="6"><span class="step-mark">○</span><span class="step-name">Prepare</span></li>
+                                <li class="step-item" data-step="7"><span class="step-mark">○</span><span class="step-name">Form</span></li>
+                                <li class="step-item" data-step="8"><span class="step-mark">○</span><span class="step-name">Inspect</span></li>
+                                <li class="step-item" data-step="9"><span class="step-mark">○</span><span class="step-name">Result</span></li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Data Interface (Later Phase)</h2>
+                            <span class="panel-note">Integration point</span>
+                        </div>
+                        <div class="panel-body">
+                            <p class="panel-text">CURRENT: js/mock-machine.js pushes normalized data (js/machine-data.js) into the binding function below. FUTURE: Person 1's simulation replaces the mock through an adapter — the HMI call stays identical:</p>
+                            <pre class="code-block">CablePrep.App.updateMachineData({
+    state: "FEEDING",
+    position: 150,             // mm
+    speed: 100,                // mm/s
+    encoder: 750,
+    cableDetected: true,
+    aligned: true,
+    safetyOK: true
+});</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== SCREEN: INSPECTION ==================== -->
+                <section class="screen" id="screen-inspection" role="region" aria-label="Inspection">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Specimen Inspection</h1>
+                        <p class="screen-subtitle">Dimensional and visual checks of the prepared specimen</p>
+                    </div>
+
+                    <div class="panel-row panel-row--inspection">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2 class="panel-title">Specimen Visualization</h2>
+                                <span class="panel-note">assets/specimen</span>
+                            </div>
+                            <div class="panel-body">
+                                <div class="placeholder-box placeholder-box--specimen">
+                                    <span class="placeholder-title">SPECIMEN IMAGE</span>
+                                    <span class="placeholder-text">Specimen visualization or captured image will appear here during inspection (later phase).</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h2 class="panel-title">Final Result</h2>
+                                <span class="panel-note">Simulated result — demo</span>
+                            </div>
+                            <div class="panel-body panel-body--result">
+                                <span class="status-badge status-badge--waiting result-badge" id="inspFinalResult">WAITING FOR INSPECTION</span>
+                                <p class="panel-text" id="inspResultDetail">No inspection result yet. The mock machine reports a simulated result after INSPECTING.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Inspection Parameters</h2>
+                            <span class="panel-note">DEMO PARAMETERS — NOT VERIFIED IS 10810 VALUES</span>
+                        </div>
+                        <div class="panel-body panel-body--flush">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Measured Value</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inspectionParamBody"><!-- rendered by js/inspection.js --></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== SCREEN: HISTORY ==================== -->
+                <section class="screen" id="screen-history" role="region" aria-label="History">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Batch History</h1>
+                        <p class="screen-subtitle">Record of prepared batches and inspection outcomes</p>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Batch Records</h2>
+                            <span class="tag tag--demo">Demo Data</span>
+                        </div>
+                        <div class="panel-body panel-body--flush">
+                            <div class="table-wrap">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Batch</th>
+                                            <th class="cell-center">Specimens</th>
+                                            <th class="cell-center">Accepted</th>
+                                            <th class="cell-center">Rejected</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody"><!-- rendered by js/history.js --></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="panel-footer">Static demo rows. Persistent history (LocalStorage) will be added in a later phase.</div>
+                    </div>
+                </section>
+
+                <!-- ==================== SCREEN: REPORTS ==================== -->
+                <section class="screen" id="screen-reports" role="region" aria-label="Reports">
+                    <div class="screen-header">
+                        <h1 class="screen-title">Reports</h1>
+                        <p class="screen-subtitle">Batch, specimen, inspection and machine reports</p>
+                    </div>
+
+                    <div class="report-grid" id="reportGrid"><!-- rendered by js/reports.js --></div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Report Actions</h2>
+                            <span class="panel-note">Placeholders — Phase 1</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="control-bar">
+                                <button type="button" class="btn btn--primary" id="btnViewReport">VIEW REPORT</button>
+                                <button type="button" class="btn btn--primary" id="btnExportReport">EXPORT REPORT</button>
+                            </div>
+                            <p class="control-feedback" id="reportFeedback" role="status" aria-live="polite">Report generation and export will be implemented in a later phase.</p>
+                        </div>
+                    </div>
+                </section>
+
+
+
+
+
+            </main>
+        </div>
+
+        <!-- ==================== BOTTOM STATUS BAR ==================== -->
+        <footer class="hmi-statusbar">
+            <span class="statusbar-item"><span class="statusbar-key">System Status:</span><span class="statusbar-value status-text status-text--ready" id="statusBarSystemStatus">READY</span></span>
+            <span class="statusbar-item"><span class="statusbar-key">Mode:</span><span class="statusbar-value" id="statusBarMode">AUTOMATIC</span></span>
+            <span class="statusbar-item"><span class="statusbar-key">Connection:</span><span class="statusbar-value" id="statusBarConnection">LOCAL SIMULATION</span></span>
+            <span class="statusbar-spacer"></span>
+            <span class="statusbar-item"><span class="statusbar-key">Version:</span><span class="statusbar-value" id="statusBarVersion">v1.0</span></span>
+        </footer>
+
+    </div>
+
+    <!-- Classic scripts (no ES modules) so the app also runs directly from file:// -->
+    <script src="js/app.js"></script>
+    <script src="js/machine-data.js"></script>
+    <script src="js/mock-machine.js"></script>
+    <script src="js/inspection.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/reports.js"></script>
+</body>
+</html>
