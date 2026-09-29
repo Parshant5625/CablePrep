@@ -218,5 +218,185 @@
         STATE_STEP: STATE_STEP,
         STATE_STATION: STATE_STATION
     };
+
+    
+    /* Person 1 live simulation -> normalized HMI provider. */
+    function createSimulationAdapter() {
+        if (!window.Simulation || typeof window.Simulation.machineData !== 'function') {
+            return null;
+        }
+
+        var pollId = null;
+        var startedAt = 0;
+
+        function snapshot() {
+            var raw = window.Simulation.machineData();
+            var sensors = raw.sensors || {};
+            var inspection = raw.inspection || {};
+            var state = raw.state || 'IDLE';
+            var stepIndex = typeof STATE_STEP[state] === 'number' ? STATE_STEP[state] : -1;
+            if (state === 'FAULT' && raw.fault && raw.fault.stateAtFault) {
+                stepIndex = typeof STATE_STEP[raw.fault.stateAtFault] === 'number'
+                    ? STATE_STEP[raw.fault.stateAtFault] : -1;
+            }
+
+            var result = raw.result === 'PASS' ? 'ACCEPT' :
+                (raw.result === 'REJECT' ? 'REJECT' : null);
+            var fault = raw.fault ? {
+                code: raw.fault.code || 'FAULT',
+                message: raw.fault.message || 'Machine fault',
+                condition: raw.fault.message || '',
+                station: STATE_STATION[raw.fault.stateAtFault] || null
+            } : null;
+            var running = Boolean(window.Simulation.isRunning &&
+                window.Simulation.isRunning());
+            var cycleNo = Number(raw.cycleCount || 0);
+            var progress = stepIndex < 0 ? 0 :
+                Math.min(100, ((stepIndex + (state === 'COMPLETE' ? 1 : 0)) / STEPS.length) * 100);
+
+            return {
+                state: state,
+                running: running,
+                position: raw.position,
+                speed: raw.speed,
+                encoder: raw.encoder,
+                cableDetected: Boolean(sensors.cableDetected),
+                aligned: typeof sensors.aligned === 'undefined' ? null : sensors.aligned,
+                safetyOK: Boolean(sensors.safetyOK),
+                cutPositionReady: Boolean(sensors.cutPositionReady),
+                preparationReady: Boolean(sensors.preparationComplete),
+                length: inspection.length,
+                width: inspection.width,
+                thickness: inspection.thickness,
+                result: result,
+                resultParameter: inspection.reasons && inspection.reasons.length
+                    ? inspection.reasons[0] : null,
+                fault: fault,
+                process: state,
+                progress: progress,
+                stepIndex: stepIndex,
+                stepLabel: stepIndex >= 0 && STEPS[stepIndex] ? STEPS[stepIndex].label : '—',
+                stepProgress: 0,
+                station: fault ? fault.station : (STATE_STATION[state] || null),
+                cableFraction: clamp(Number(raw.position || 0) / 250, 0, 1),
+                elapsedMs: startedAt ? Date.now() - startedAt : 0,
+                batch: 'CP-' + String(Math.max(1, cycleNo)).padStart(3, '0'),
+                specimen: String(Math.max(1, cycleNo + 1)).padStart(2, '0') + ' / 01',
+                mode: 'AUTOMATIC',
+                systemStatus: fault ? 'FAULT' : (running ? 'RUNNING' :
+                    (state === 'IDLE' ? 'READY' : 'STOPPED')),
+                cycleCount: cycleNo,
+                batchRecords: typeof window.Simulation.batch === 'function'
+                    ? window.Simulation.batch() : [],
+                actuators: raw.actuators || {},
+                events: raw.events || []
+            };
+        }
+
+        function emit() {
+            if (window.CablePrep.App &&
+                typeof window.CablePrep.App.updateMachineData === 'function') {
+                window.CablePrep.App.updateMachineData(normalize(snapshot()));
+            }
+        }
+
+        function ensurePoller() {
+            if (pollId === null) {
+                pollId = window.setInterval(emit, 100);
+            }
+        }
+
+        var adapter = {
+            start: function () {
+                var raw = window.Simulation.machineData();
+                if (raw.state === 'IDLE') {
+                    if (typeof window.Simulation.loadCable === 'function') {
+                        window.Simulation.loadCable();
+                    }
+                    startedAt = Date.now();
+                    var ok = window.Simulation.start();
+                    ensurePoller();
+                    emit();
+                    return ok;
+                }
+                if (typeof window.Simulation.startTimer === 'function') {
+                    window.Simulation.startTimer();
+                }
+                ensurePoller();
+                emit();
+                return true;
+            },
+            stop: function () {
+                if (typeof window.Simulation.stopTimer === 'function') {
+                    window.Simulation.stopTimer();
+                }
+                emit();
+                return true;
+            },
+            reset: function () {
+                var ok = typeof window.Simulation.reset === 'function'
+                    ? window.Simulation.reset() : false;
+                startedAt = 0;
+                emit();
+                return ok;
+            },
+            setMode: function () { emit(); },
+            getState: function () { return window.Simulation.getState(); },
+            injectFault: function (name) {
+                if (typeof window.Simulation.injectFault === 'function') {
+                    window.Simulation.injectFault(name);
+                    emit();
+                }
+            },
+            emergencyStop: function () {
+                var ok = typeof window.Simulation.emergencyStop === 'function'
+                    ? window.Simulation.emergencyStop() : false;
+                emit();
+                return ok;
+            },
+            releaseEmergencyStop: function () {
+                if (typeof window.Simulation.releaseEmergencyStop === 'function') {
+                    window.Simulation.releaseEmergencyStop();
+                    emit();
+                }
+            },
+            loadCable: function () {
+                if (typeof window.Simulation.loadCable === 'function') {
+                    window.Simulation.loadCable();
+                    emit();
+                }
+            },
+            unloadCable: function () {
+                if (typeof window.Simulation.unloadCable === 'function') {
+                    window.Simulation.unloadCable();
+                    emit();
+                }
+            },
+            getSnapshot: function () { return normalize(snapshot()); }
+        };
+
+        ensurePoller();
+        emit();
+        return adapter;
+    }
+
+    function initLiveSimulationAdapter() {
+        var app = window.CablePrep && window.CablePrep.App;
+        if (!app || typeof app.registerMachine !== 'function') { return; }
+        var adapter = createSimulationAdapter();
+        if (adapter) {
+            app.registerMachine(adapter);
+            app.updateMachineData(adapter.getSnapshot());
+        }
+    }
+
+    window.CablePrep.MachineData.createSimulationAdapter = createSimulationAdapter;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLiveSimulationAdapter);
+    } else {
+        initLiveSimulationAdapter();
+    }
+
 })();
 
