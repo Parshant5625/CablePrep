@@ -203,7 +203,11 @@
             batch: String(raw.batch || '—'),
             specimen: String(raw.specimen || '—'),
             mode: raw.mode === 'MANUAL' ? 'MANUAL' : 'AUTOMATIC',
-            systemStatus: String(raw.systemStatus || 'READY').toUpperCase()
+            systemStatus: String(raw.systemStatus || 'READY').toUpperCase(),
+            cycleCount: Number(raw.cycleCount || 0),
+            batchRecords: Array.isArray(raw.batchRecords) ? raw.batchRecords.slice() : [],
+            actuators: raw.actuators || {},
+            events: Array.isArray(raw.events) ? raw.events.slice() : []
         };
     }
 
