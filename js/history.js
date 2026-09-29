@@ -54,7 +54,8 @@
     function render(rows) {
         var body = document.getElementById('historyTableBody');
         if (!body) { return; }
-        body.innerHTML = (rows || rowsForDisplay()).map(rowHtml).join('');
+        var displayRows = Array.isArray(rows) ? rows : rowsForDisplay();
+        body.innerHTML = displayRows.map(rowHtml).join('');
     }
 
     function addRun(run) {
