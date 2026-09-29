@@ -231,8 +231,24 @@
         if (form) {
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
+
+                var config = App.getConfiguration();
+
+                try {
+                    window.localStorage.setItem('cableprep.config.v1', JSON.stringify(config));
+                } catch (e) {
+                    /* Storage may be unavailable in restricted browser contexts. */
+                }
+
+                if (App.machine && typeof App.machine.configure === 'function') {
+                    App.machine.configure(config);
+                } else if (App.machine && typeof App.machine.setMode === 'function') {
+                    App.machine.setMode(config.mode);
+                }
+
+                App.setMode(config.mode);
                 setText('configFeedback',
-                    'Configuration saved and applied to the live simulation. New batch settings apply from the next START.');
+                    'Configuration saved and applied. New batch settings will be used on the next START.');
             });
         }
 
