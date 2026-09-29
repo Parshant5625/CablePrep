@@ -240,6 +240,8 @@ const Simulation = (function () {
    * ================================================================== */
   let state = 'IDLE';
   let mode = 'IDLE';                 // IDLE | RUNNING | FAULT | ESTOP
+  let operationMode = 'AUTOMATIC';   // AUTOMATIC | MANUAL (operator-selected HMI mode)
+  let manualStepRequested = false;   // manual mode runs exactly one state transition per command
   let stateElapsedMs = 0;            // how long we have been in this state
   let requiresReset = false;
   let result = null;                 // null | 'PASS' | 'REJECT'
@@ -668,7 +670,16 @@ const Simulation = (function () {
     reportActuatorChanges();
 
     // 4. decide whether this state is finished
+    const stateBeforeDecision = state;
     evaluateExit();
+
+    // In MANUAL mode, a command runs the current process stage until it
+    // reaches the next legal state, then pauses. This keeps all decisions in
+    // the state machine while making the HMI's Manual mode genuinely useful.
+    if (operationMode === 'MANUAL' && manualStepRequested && state !== stateBeforeDecision) {
+      manualStepRequested = false;
+      if (state !== 'FAULT' && state !== 'IDLE') { stopTimer(); }
+    }
 
     // 5. a state that runs out of time is a fault. CUTTING and PREPARING
     //    check their own clock (for them a timeout means "the tool did not
@@ -747,6 +758,9 @@ const Simulation = (function () {
 
   /* ---- start() : begin a new cycle from IDLE ---------------------- */
   function start() {
+    if (operationMode === 'MANUAL' && state !== 'IDLE') {
+      return manualStep();
+    }
     if (state === 'FAULT') {
       log('FAULT', 'START REFUSED: the machine is in FAULT and needs a reset');
       return false;
@@ -774,9 +788,54 @@ const Simulation = (function () {
     log('START', 'Standard=IS10810(sim) Material=PVC(sim) Type=INSULATION Qty=1');
     log('SAFETY', 'OK');
 
-    mode = 'RUNNING';
+    mode = operationMode === 'MANUAL' ? 'MANUAL' : 'RUNNING';
+    manualStepRequested = operationMode === 'MANUAL';
     startTimer();
     changeState('INITIALIZING');
+    return true;
+  }
+
+  /* ---- setMode() / manualStep() : operator-selected control mode ----- */
+  function setMode(nextMode) {
+    operationMode = String(nextMode || 'AUTOMATIC').toUpperCase() === 'MANUAL'
+      ? 'MANUAL' : 'AUTOMATIC';
+    if (state === 'IDLE') {
+      mode = 'IDLE';
+    } else if (state !== 'FAULT') {
+      mode = operationMode === 'MANUAL' ? 'MANUAL' : 'RUNNING';
+      if (operationMode === 'AUTOMATIC' && !running) { startTimer(); }
+    }
+    log('MODE', 'Operating mode = ' + operationMode);
+    return operationMode;
+  }
+
+  function manualStep() {
+    if (operationMode !== 'MANUAL' || state === 'FAULT' || state === 'IDLE') { return false; }
+    manualStepRequested = true;
+    startTimer();
+    return true;
+  }
+
+  /* Apply operator configuration to the simulation. Values remain clearly
+     simulation/demo values; no claim of verified standard compliance is made. */
+  function configure(settings) {
+    settings = settings || {};
+    if (Number(settings.length) > 0) {
+      CONFIG.targetSpecimenLengthMm = Number(settings.length);
+      CONFIG.cuttingPositionMm = Number(settings.length);
+      CONFIG.feedDistanceMm = Number(settings.length);
+    }
+    if (Number(settings.width) > 0) {
+      CONFIG.goodMeasurement.width = Number(settings.width);
+      CONFIG.visionRange.width.min = Number(settings.width) * 0.95;
+      CONFIG.visionRange.width.max = Number(settings.width) * 1.05;
+    }
+    if (Number(settings.thickness) > 0) {
+      CONFIG.goodMeasurement.thickness = Number(settings.thickness);
+      CONFIG.visionRange.thickness.min = Number(settings.thickness) * 0.857142857;
+      CONFIG.visionRange.thickness.max = Number(settings.thickness) * 1.142857143;
+    }
+    setMode(settings.mode);
     return true;
   }
 
@@ -922,10 +981,13 @@ const Simulation = (function () {
     loadCable: loadCable,
     unloadCable: unloadCable,
 
-    // timer
+    // timer / operator mode
     startTimer: startTimer,
     stopTimer: stopTimer,
     isRunning: function () { return running; },
+    setMode: setMode,
+    manualStep: manualStep,
+    configure: configure,
 
     // history / traceability
     batch: function () { return batch.slice(); },
