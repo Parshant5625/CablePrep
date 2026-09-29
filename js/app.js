@@ -327,8 +327,11 @@
             return false;
         }
         App.machine = provider;
-        if (typeof provider.setMode === 'function') {
-            provider.setMode(App.getConfiguration().mode);
+        var config = App.getConfiguration();
+        if (typeof provider.configure === 'function') {
+            provider.configure(config);
+        } else if (typeof provider.setMode === 'function') {
+            provider.setMode(config.mode);
         }
         return true;
     };
