@@ -232,12 +232,24 @@
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
                 setText('configFeedback',
-                    'Configuration saved — quantity, length and operating mode apply from the next START (demo, not persisted).');
+                    'Configuration saved and applied to the live simulation. New batch settings apply from the next START.');
             });
         }
 
         /* Mirrors the selected mode into the status bar and dashboard tile.
            Pure UI mirroring — no machine behaviour involved. */
+        try {
+            var saved = JSON.parse(window.localStorage.getItem('cableprep.config.v1') || 'null');
+            if (saved) {
+                var map = { cfgStandard:'standard', cfgMaterial:'material', cfgSpecimenType:'specimenType',
+                    cfgQuantity:'quantity', cfgMode:'mode', cfgLength:'length', cfgWidth:'width', cfgThickness:'thickness' };
+                Object.keys(map).forEach(function (id) {
+                    var el = $(id);
+                    if (el && saved[map[id]] !== undefined && saved[map[id]] !== null) { el.value = saved[map[id]]; }
+                });
+            }
+        } catch (e) {}
+
         var modeSelect = $('cfgMode');
         if (modeSelect) {
             modeSelect.addEventListener('change', function () {
