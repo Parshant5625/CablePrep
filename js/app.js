@@ -436,12 +436,47 @@
         if (typeof data.preparationReady !== 'undefined') {
             setText('monPreparation', data.preparationReady ? 'READY' : 'NOT READY');
         }
-        if (typeof data.motor !== 'undefined') {
+        if (data.actuators && typeof data.actuators === 'object') {
+            var actuatorNames = Object.keys(data.actuators);
+            var activeActuators = actuatorNames.filter(function (name) {
+                return Boolean(data.actuators[name]);
+            });
+            setText('monMotor', activeActuators.length
+                ? activeActuators.map(function (name) { return name.toUpperCase(); }).join(' · ')
+                : 'STOPPED');
+        } else if (typeof data.motor !== 'undefined') {
             setText('monMotor', String(data.motor).toUpperCase());
         } else if (typeof data.running !== 'undefined') {
-            /* motor status is derived when the provider does not send one */
             setText('monMotor', (data.running && data.state !== 'FAULT') ? 'RUNNING' : 'STOPPED');
         }
+
+        /* Live machine-data contract — useful for integration/debugging. */
+        var dataPreview = $('machineDataPreview');
+        if (dataPreview) {
+            var preview = {
+                state: data.state,
+                running: Boolean(data.running),
+                position: data.position,
+                speed: data.speed,
+                encoder: data.encoder,
+                cableDetected: Boolean(data.cableDetected),
+                aligned: data.aligned,
+                safetyOK: Boolean(data.safetyOK),
+                cutPositionReady: Boolean(data.cutPositionReady),
+                preparationReady: Boolean(data.preparationReady),
+                result: data.result,
+                fault: data.fault,
+                cycleCount: data.cycleCount,
+                requiresReset: Boolean(data.requiresReset),
+                estopLatched: Boolean(data.estopLatched),
+                sensors: data.sensors || {},
+                actuators: data.actuators || {},
+                inspection: data.inspection || {},
+                events: Array.isArray(data.events) ? data.events.slice(-8) : []
+            };
+            dataPreview.textContent = JSON.stringify(preview, null, 2);
+        }
+
         if (typeof data.safetyOK !== 'undefined') {
             setText('monSafety', data.safetyOK ? 'OK' : 'FAULT');
             var safety = $('monSafety');
