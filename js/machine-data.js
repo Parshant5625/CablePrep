@@ -205,9 +205,13 @@
             mode: raw.mode === 'MANUAL' ? 'MANUAL' : 'AUTOMATIC',
             systemStatus: String(raw.systemStatus || 'READY').toUpperCase(),
             cycleCount: Number(raw.cycleCount || 0),
-            batchRecords: Array.isArray(raw.batchRecords) ? raw.batchRecords.slice() : [],
+            requiresReset: Boolean(raw.requiresReset),
+            estopLatched: Boolean(raw.estopLatched),
+            sensors: raw.sensors || {},
             actuators: raw.actuators || {},
-            events: Array.isArray(raw.events) ? raw.events.slice() : []
+            inspection: raw.inspection || {},
+            events: Array.isArray(raw.events) ? raw.events.slice() : [],
+            batchRecords: Array.isArray(raw.batchRecords) ? raw.batchRecords.slice() : []
         };
     }
 
@@ -292,12 +296,19 @@
                 batchRecords: typeof window.Simulation.batch === 'function'
                     ? window.Simulation.batch() : [],
                 actuators: raw.actuators || {},
-                events: raw.events || []
+                events: raw.events || [],
+                sensors: sensors,
+                inspection: inspection,
+                requiresReset: Boolean(raw.requiresReset),
+                estopLatched: Boolean(raw.estopLatched)
             };
         }
 
         function emit() {
             var current = window.Simulation.machineData();
+            if (batchTarget > 0 && current.cycleCount >= batchTarget) {
+                batchTarget = 0;
+            }
             if (!autoBatchStarting && batchTarget > 0 && current.state === 'IDLE' &&
                 current.cycleCount < batchTarget &&
                 typeof window.Simulation.getMode === 'function' &&
@@ -351,11 +362,13 @@
                     }
                 }
                 if (raw.state === 'IDLE') {
+                    if (batchTarget <= Number(raw.cycleCount || 0)) {
+                        batchTarget = Number(raw.cycleCount || 0) + Math.max(1, Number(config.quantity || 1));
+                    }
                     if (typeof window.Simulation.loadCable === 'function') {
                         window.Simulation.loadCable();
                     }
                     startedAt = Date.now();
-                    batchTarget = Number(raw.cycleCount || 0) + Math.max(1, Number(config.quantity || 1));
                     var ok = window.Simulation.start();
                     ensurePoller();
                     emit();
