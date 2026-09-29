@@ -83,26 +83,46 @@
         }
 
         var measured = data.length !== null && typeof data.length !== 'undefined';
+        var finalResult = String(data.result || '').toUpperCase();
+        var reasons = Array.isArray(data.inspection && data.inspection.reasons)
+            ? data.inspection.reasons
+            : [];
 
-        if (data.result) {
-            /* Finalized: parameter statuses follow the simulated result. */
-            var fail = data.resultParameter;
-            parameters.forEach(function (p) {
-                if (measured) {
-                    if (p.id === 'length') { setMeasuredValue(p, data.length); }
-                    if (p.id === 'width') { setMeasuredValue(p, data.width); }
-                    if (p.id === 'thickness') { setMeasuredValue(p, data.thickness); }
+        function reasonFor(id) {
+            var needle = String(id).toLowerCase();
+            for (var i = 0; i < reasons.length; i++) {
+                var reason = String(reasons[i]).toLowerCase();
+                if (reason.indexOf(needle) >= 0) {
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        if (finalResult === 'ACCEPT' || finalResult === 'REJECT') {
+            parameters.forEach(function (p) {
+                if (p.id === 'length') { setMeasuredValue(p, data.length); }
+                if (p.id === 'width') { setMeasuredValue(p, data.width); }
+                if (p.id === 'thickness') { setMeasuredValue(p, data.thickness); }
                 if (p.id === 'shape') { p.value = 'REGULAR (demo)'; }
                 if (p.id === 'surface') { p.value = 'OK (demo)'; }
-                p.status = (data.result === 'REJECT' && p.id === fail) ? 'REJECT' : 'PASS';
+
+                if (finalResult === 'ACCEPT') {
+                    p.status = 'PASS';
+                } else {
+                    /* Reject only the parameter(s) named by the vision reason.
+                       Other measured parameters remain PASS. */
+                    p.status = reasonFor(p.id) ? 'REJECT' : 'PASS';
+                }
             });
-            setFinalResult(data.result, data.result === 'REJECT'
-                ? 'Demo deviation on: ' + (fail || 'parameter') +
+
+            setFinalResult(finalResult, finalResult === 'REJECT'
+                ? 'Inspection rejected the specimen. ' +
+                  (reasons.length ? reasons.join(' | ') : 'See machine fault/result data.') +
                   ' — DEMO PARAMETERS, NOT VERIFIED IS 10810 VALUES.'
-                : 'All demo parameters within demo limits — DEMO PARAMETERS, NOT VERIFIED IS 10810 VALUES.');
+                : 'All demo inspection parameters passed — DEMO PARAMETERS, NOT VERIFIED IS 10810 VALUES.');
+
         } else if (measured) {
-            /* Mid-cycle: measurements received, evaluation still pending. */
             parameters.forEach(function (p) {
                 if (p.id === 'length') { setMeasuredValue(p, data.length); }
                 if (p.id === 'width') { setMeasuredValue(p, data.width); }
@@ -112,19 +132,21 @@
             });
             setFinalResult('WAITING');
             setDetail('Measurements received — waiting for the inspection result.');
+
         } else if (data.state === 'IDLE') {
-            /* Fresh idle / reset: return everything to WAITING. */
             parameters.forEach(function (p) {
                 p.value = null;
                 p.status = 'WAITING';
             });
             setFinalResult('WAITING');
-            setDetail('No inspection result yet. The mock machine reports a simulated result after INSPECTING.');
+            setDetail(data.cycleCount
+                ? 'Cycle complete. Start a new specimen when ready.'
+                : 'No inspection result yet. Press START to run a preparation cycle.');
+
         } else {
-            return; /* other mid-cycle states: nothing to update */
+            return;
         }
 
-        /* Re-render only when the visible rows actually changed. */
         var sig = parameters.map(function (p) {
             return p.id + ':' + p.value + ':' + p.status;
         }).join('|');
