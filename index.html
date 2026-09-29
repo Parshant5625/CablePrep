@@ -350,14 +350,14 @@
                 <section class="screen" id="screen-monitor" role="region" aria-label="Machine Monitor">
                     <div class="screen-header">
                         <h1 class="screen-title">Machine Monitor</h1>
-                        <p class="screen-subtitle">Machine and sensor signals — live simulation</p>
+                        <p class="screen-subtitle">Machine and sensor signals — live Person 1 simulation</p>
                     </div>
 
                     <!-- MACHINE STATUS -->
                     <div class="panel">
                         <div class="panel-header">
                             <h2 class="panel-title">Machine Status</h2>
-                            <span class="panel-note">Live — mock data provider</span>
+                            <span class="panel-note">Live — Person 1 machine simulation</span>
                         </div>
                         <div class="panel-body">
                             <div class="monitor-grid">
@@ -507,7 +507,7 @@
                             <span class="panel-note">Integration point</span>
                         </div>
                         <div class="panel-body">
-                            <p class="panel-text">CURRENT: js/mock-machine.js pushes normalized data (js/machine-data.js) into the binding function below. FUTURE: Person 1's simulation replaces the mock through an adapter — the HMI call stays identical:</p>
+                            <p class="panel-text">CURRENT: Person 1's live simulation publishes machineData() through js/machine-data.js. FALLBACK: mock provider is used only if the live simulation is unavailable. The HMI binding stays identical:</p>
                             <pre class="code-block">CablePrep.App.updateMachineData({
     state: "FEEDING",
     position: 150,             // mm
@@ -603,7 +603,7 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="panel-footer">Persistent browser history — prototype traceability</div>
+                        <div class="panel-footer">Persistent browser history — live simulation traceability</div>
                     </div>
                 </section>
 
