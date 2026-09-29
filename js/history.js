@@ -1,94 +1,112 @@
-/* ==========================================================================
- * CablePrep HMI — history.js
- * Phase 1 : renders the batch-history table with STATIC DEMO rows.
- *
- * No LocalStorage / persistence yet — real history handling is a later
- * phase. Replace the demo rows via CablePrep.History.render(rows).
- * ========================================================================== */
+/* CablePrep HMI — persistent cycle history.
+ * Stores completed HMI records locally in the browser. This is prototype
+ * traceability only; it is not a production database.
+ */
 (function () {
     'use strict';
-
     window.CablePrep = window.CablePrep || {};
 
-    /* Clearly marked demo data (the Date column reads "Demo" on purpose). */
+    var KEY = 'cableprep.history.v1';
     var DEMO_ROWS = [
-        { batch: 'CP-001', specimens: 4, accepted: 4, rejected: 0, date: 'Demo', status: 'COMPLETE' },
-        { batch: 'CP-002', specimens: 4, accepted: 3, rejected: 1, date: 'Demo', status: 'COMPLETE' },
-        { batch: 'CP-003', specimens: 4, accepted: 0, rejected: 0, date: 'Demo', status: 'RUNNING' }
+        { batch: 'DEMO-001', specimens: 4, accepted: 4, rejected: 0, date: 'Demo', status: 'COMPLETE' },
+        { batch: 'DEMO-002', specimens: 4, accepted: 3, rejected: 1, date: 'Demo', status: 'COMPLETE' }
     ];
+    var liveRows = load();
 
-    /* Builds a status badge (values come from our own model, not user input). */
+    function load() {
+        try {
+            var parsed = JSON.parse(window.localStorage.getItem(KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function persist() {
+        try {
+            window.localStorage.setItem(KEY, JSON.stringify(liveRows));
+        } catch (e) {
+            /* file:// or privacy-restricted browsers may disable storage. */
+        }
+    }
+
     function badgeHtml(status) {
-        var variant = String(status).toLowerCase();
-        return '<span class="status-badge status-badge--' + variant + '">' + status + '</span>';
+        var variant = String(status || 'WAITING').toLowerCase();
+        return '<span class="status-badge status-badge--' + variant + '">' +
+            String(status || 'WAITING') + '</span>';
     }
 
     function rowHtml(row) {
         return '<tr>' +
             '<td class="cell-strong cell-mono">' + row.batch + '</td>' +
-            '<td class="cell-center cell-mono">' + row.specimens + '</td>' +
-            '<td class="cell-center cell-mono">' + row.accepted + '</td>' +
-            '<td class="cell-center cell-mono">' + row.rejected + '</td>' +
-            '<td class="cell-mono">' + row.date + '</td>' +
+            '<td class="cell-center cell-mono">' + Number(row.specimens || 0) + '</td>' +
+            '<td class="cell-center cell-mono">' + Number(row.accepted || 0) + '</td>' +
+            '<td class="cell-center cell-mono">' + Number(row.rejected || 0) + '</td>' +
+            '<td class="cell-mono">' + (row.date || '—') + '</td>' +
             '<td>' + badgeHtml(row.status) + '</td>' +
             '</tr>';
     }
 
-    function render(rows) {
-        var body = document.getElementById('historyTableBody');
-        if (!body) {
-            return;
-        }
-        var data = rows || DEMO_ROWS;
-        body.innerHTML = data.map(rowHtml).join('');
+    function rowsForDisplay() {
+        return liveRows.slice().reverse().concat(DEMO_ROWS);
     }
 
-    /* Phase 2: prepend/merge a completed run above the demo rows.
-       In-memory only — real persistence belongs to a later phase. */
-    var liveRows = [];
+    function render(rows) {
+        var body = document.getElementById('historyTableBody');
+        if (!body) { return; }
+        body.innerHTML = (rows || rowsForDisplay()).map(rowHtml).join('');
+    }
 
     function addRun(run) {
-        if (!run || !run.batch) {
-            return false;
-        }
+        if (!run || !run.batch) { return false; }
+
         var existing = null;
         liveRows.forEach(function (row) {
-            if (row.batch === run.batch) {
-                existing = row;
-            }
+            if (row.batch === run.batch) { existing = row; }
         });
+
         if (existing) {
-            existing.specimens += run.specimens || 1;
-            existing.accepted += run.accepted || 0;
-            existing.rejected += run.rejected || 0;
+            existing.specimens = Number(existing.specimens || 0) + Number(run.specimens || 1);
+            existing.accepted = Number(existing.accepted || 0) + Number(run.accepted || 0);
+            existing.rejected = Number(existing.rejected || 0) + Number(run.rejected || 0);
             existing.date = run.date || existing.date;
+            existing.status = run.status || existing.status;
         } else {
-            liveRows.unshift({
-                batch: run.batch,
-                specimens: run.specimens || 1,
-                accepted: run.accepted || 0,
-                rejected: run.rejected || 0,
-                date: run.date || 'Live',
-                status: run.status || 'COMPLETE'
+            liveRows.push({
+                batch: String(run.batch),
+                specimens: Number(run.specimens || 1),
+                accepted: Number(run.accepted || 0),
+                rejected: Number(run.rejected || 0),
+                date: run.date || new Date().toLocaleString(),
+                status: run.status || 'COMPLETE',
+                lastResult: run.lastResult || null
             });
         }
-        render(liveRows.concat(DEMO_ROWS));
+        persist();
+        render();
         return true;
     }
 
-    /* Public API for later phases. */
+    function getRows() {
+        return liveRows.slice().reverse();
+    }
+
+    function clear() {
+        liveRows = [];
+        persist();
+        render();
+    }
+
     window.CablePrep.History = {
         render: render,
         addRun: addRun,
-        getDemoRows: function () {
-            return DEMO_ROWS.slice();
-        }
+        getRows: getRows,
+        getDemoRows: function () { return DEMO_ROWS.slice(); },
+        clear: clear
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () {
-            render();
-        });
+        document.addEventListener('DOMContentLoaded', render);
     } else {
         render();
     }
