@@ -550,7 +550,7 @@
         } else if (!data.running) {
             hint = 'Machine stopped — press START to resume or RESET to clear.';
         } else {
-            hint = 'Cycle in progress — live values from Person 1's machine simulation.';
+            hint = 'Cycle in progress — live values from the Person 1 machine simulation.';
         }
         setText('dashProcessHint', hint);
     }
