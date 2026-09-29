@@ -196,6 +196,16 @@
                 } else if (action === 'reset') {
                     machine.reset();
                     setText('controlFeedback', 'RESET — machine reset to IDLE. Fault, sensors, progress and result cleared.');
+                } else if (action === 'estop') {
+                    if (typeof machine.emergencyStop === 'function') {
+                        machine.emergencyStop();
+                        setText('controlFeedback', 'EMERGENCY STOP — all machine motion stopped. Release E-stop, then RESET.');
+                    }
+                } else if (action === 'release-estop') {
+                    if (typeof machine.releaseEmergencyStop === 'function') {
+                        machine.releaseEmergencyStop();
+                        setText('controlFeedback', 'E-stop released. Press RESET before restarting.');
+                    }
                 }
             });
         });
