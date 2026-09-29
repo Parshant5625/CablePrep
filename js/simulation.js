@@ -555,7 +555,13 @@ const Simulation = (function () {
         }
         Machine.allOff();
         mode = 'IDLE';
-        if (stateTimeLeftMs() <= 0) { changeState('IDLE'); }
+        if (stateTimeLeftMs() <= 0) {
+          changeState('IDLE');
+          // A completed automatic/manual cycle must stop ticking.
+          stopTimer();
+          mode = 'IDLE';
+          manualStepRequested = false;
+        }
         break;
 
       case 'IDLE':
