@@ -280,9 +280,12 @@
                 station: fault ? fault.station : (STATE_STATION[state] || null),
                 cableFraction: clamp(Number(raw.position || 0) / 250, 0, 1),
                 elapsedMs: startedAt ? Date.now() - startedAt : 0,
-                batch: 'CP-' + String(Math.max(1, cycleNo)).padStart(3, '0'),
-                specimen: String(Math.max(1, cycleNo + 1)).padStart(2, '0') + ' / 01',
-                mode: 'AUTOMATIC',
+                batch: 'CP-' + String(Math.max(1, batchTarget ? Math.ceil(batchTarget / Math.max(1, batchTarget)) : cycleNo + 1)).padStart(3, '0'),
+                specimen: String(Math.min(Math.max(1, cycleNo + 1), Math.max(1, batchTarget || cycleNo + 1))).padStart(2, '0') +
+                    ' / ' + String(Math.max(1, batchTarget || cycleNo + 1)).padStart(2, '0'),
+                mode: typeof window.Simulation.getMode === 'function'
+                    ? (window.Simulation.getMode() === 'MANUAL' ? 'MANUAL' : 'AUTOMATIC')
+                    : 'AUTOMATIC',
                 systemStatus: fault ? 'FAULT' : (running ? 'RUNNING' :
                     (state === 'IDLE' ? 'READY' : 'STOPPED')),
                 cycleCount: cycleNo,
@@ -294,6 +297,21 @@
         }
 
         function emit() {
+            var current = window.Simulation.machineData();
+            if (!autoBatchStarting && batchTarget > 0 && current.state === 'IDLE' &&
+                current.cycleCount < batchTarget &&
+                typeof window.Simulation.getMode === 'function' &&
+                window.Simulation.getMode() !== 'MANUAL') {
+                autoBatchStarting = true;
+                window.setTimeout(function () {
+                    autoBatchStarting = false;
+                    if (window.Simulation.machineData().state === 'IDLE') {
+                        window.Simulation.loadCable();
+                        window.Simulation.start();
+                    }
+                    emit();
+                }, 50);
+            }
             if (window.CablePrep.App &&
                 typeof window.CablePrep.App.updateMachineData === 'function') {
                 window.CablePrep.App.updateMachineData(normalize(snapshot()));
@@ -306,14 +324,39 @@
             }
         }
 
+        var batchTarget = 0;
+        var autoBatchStarting = false;
+
+        function applyConfiguration() {
+            var config = window.CablePrep.App && typeof window.CablePrep.App.getConfiguration === 'function'
+                ? window.CablePrep.App.getConfiguration() : {};
+            if (typeof window.Simulation.configure === 'function') {
+                window.Simulation.configure(config);
+            } else if (typeof window.Simulation.setMode === 'function') {
+                window.Simulation.setMode(config.mode);
+            }
+            return config;
+        }
+
         var adapter = {
             start: function () {
+                var config = applyConfiguration();
                 var raw = window.Simulation.machineData();
+                if (config.mode === 'MANUAL' && raw.state !== 'IDLE') {
+                    if (typeof window.Simulation.manualStep === 'function') {
+                        var stepped = window.Simulation.manualStep();
+                        ensurePoller();
+                        emit();
+                        return stepped;
+                    }
+                }
+                if (raw.state === 'IDLE') {
                 if (raw.state === 'IDLE') {
                     if (typeof window.Simulation.loadCable === 'function') {
                         window.Simulation.loadCable();
                     }
                     startedAt = Date.now();
+                    batchTarget = Number(raw.cycleCount || 0) + Math.max(1, Number(config.quantity || 1));
                     var ok = window.Simulation.start();
                     ensurePoller();
                     emit();
@@ -340,7 +383,13 @@
                 emit();
                 return ok;
             },
-            setMode: function () { emit(); },
+            setMode: function (mode) {
+                if (typeof window.Simulation.setMode === 'function') {
+                    window.Simulation.setMode(mode);
+                }
+                emit();
+            },
+            configure: function () { return applyConfiguration(); },
             getState: function () { return window.Simulation.getState(); },
             injectFault: function (name) {
                 if (typeof window.Simulation.injectFault === 'function') {
