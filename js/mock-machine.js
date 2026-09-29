@@ -510,13 +510,15 @@
         }
     };
 
-    /* Register with the HMI (CURRENT provider; Person 1 replaces this). */
+    /* Fallback provider only. Person 1's live simulation has priority. */
     function init() {
         var app = window.CablePrep && window.CablePrep.App;
-        if (app && typeof app.registerMachine === 'function') {
+        if (app && typeof app.registerMachine === 'function' && !app.machine) {
             app.registerMachine(MockMachine);
         }
-        emit();   /* initial idle snapshot (batch, specimen, sensors) */
+        if (!app || !app.machine || app.machine === MockMachine) {
+            emit();
+        }
     }
 
     window.CablePrep.MockMachine = MockMachine;
