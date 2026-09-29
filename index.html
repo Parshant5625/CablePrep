@@ -43,8 +43,8 @@
                     <li><button type="button" class="nav-item" data-screen="reports"><span class="nav-index">06</span><span class="nav-label">Reports</span></button></li>
                 </ul>
                 <div class="sidebar-footer">
-                    <span class="sidebar-footer-title">PHASE 1</span>
-                    <span class="sidebar-footer-text">HMI shell only. Machine simulation not connected.</span>
+                    <span class="sidebar-footer-title">LIVE PROTOTYPE</span>
+                    <span class="sidebar-footer-text">Person 1 machine simulation connected</span>
                 </div>
             </nav>
 
@@ -120,7 +120,7 @@
                         <div class="panel">
                             <div class="panel-header">
                                 <h2 class="panel-title">Machine Control</h2>
-                                <span class="panel-note">UI controls only — Phase 1</span>
+                                <span class="panel-note">Live machine controls</span>
                             </div>
                             <div class="panel-body">
                                 <div class="control-bar">
@@ -130,14 +130,14 @@
                                     <button type="button" class="btn btn--fault" data-action="estop">EMERGENCY STOP</button>
                                     <button type="button" class="btn btn--reset" data-action="release-estop">RELEASE E-STOP</button>
                                 </div>
-                                <p class="control-feedback" id="controlFeedback" role="status" aria-live="polite">Controls are not connected to machine logic in Phase 1.</p>
+                                <p class="control-feedback" id="controlFeedback" role="status" aria-live="polite">Controls are connected to the live virtual machine.</p>
                             </div>
                         </div>
 
                         <div class="panel">
                             <div class="panel-header">
                                 <h2 class="panel-title">Current Process</h2>
-                                <span class="panel-note">Driven by state machine (later phase)</span>
+                                <span class="panel-note">Driven by Person 1 state machine</span>
                             </div>
                             <div class="panel-body panel-body--process">
                                 <span class="process-badge status-badge status-badge--idle" id="dashCurrentProcess">IDLE</span>
@@ -147,7 +147,7 @@
                         </div>
                     </div>
 
-                    <!-- Machine visualization placeholder -->
+                    <!-- Live machine visualization -->
                     <div class="panel">
                         <div class="panel-header">
                             <h2 class="panel-title">Machine Overview</h2>
@@ -350,7 +350,7 @@
                 <section class="screen" id="screen-monitor" role="region" aria-label="Machine Monitor">
                     <div class="screen-header">
                         <h1 class="screen-title">Machine Monitor</h1>
-                        <p class="screen-subtitle">Machine and sensor signals — placeholder data pending simulation link</p>
+                        <p class="screen-subtitle">Machine and sensor signals — live simulation</p>
                     </div>
 
                     <!-- MACHINE STATUS -->
@@ -467,7 +467,7 @@
                     <div class="panel">
                         <div class="panel-header">
                             <h2 class="panel-title">Fault Demonstration</h2>
-                            <span class="panel-note">Phase 2 — demo only</span>
+                            <span class="panel-note">Live fault demonstration</span>
                         </div>
                         <div class="panel-body">
                             <div class="control-bar">
@@ -503,7 +503,7 @@
 
                     <div class="panel">
                         <div class="panel-header">
-                            <h2 class="panel-title">Data Interface (Later Phase)</h2>
+                            <h2 class="panel-title">Data Interface</h2>
                             <span class="panel-note">Integration point</span>
                         </div>
                         <div class="panel-body">
@@ -549,7 +549,7 @@
                             </div>
                             <div class="panel-body panel-body--result">
                                 <span class="status-badge status-badge--waiting result-badge" id="inspFinalResult">WAITING FOR INSPECTION</span>
-                                <p class="panel-text" id="inspResultDetail">No inspection result yet. The mock machine reports a simulated result after INSPECTING.</p>
+                                <p class="panel-text" id="inspResultDetail">No inspection result yet. The live machine reports its result after INSPECTING.</p>
                             </div>
                         </div>
                     </div>
@@ -603,7 +603,7 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="panel-footer">Static demo rows. Persistent history (LocalStorage) will be added in a later phase.</div>
+                        <div class="panel-footer">Persistent browser history — prototype traceability</div>
                     </div>
                 </section>
 
@@ -619,14 +619,14 @@
                     <div class="panel">
                         <div class="panel-header">
                             <h2 class="panel-title">Report Actions</h2>
-                            <span class="panel-note">Placeholders — Phase 1</span>
+                            <span class="panel-note">Live report actions</span>
                         </div>
                         <div class="panel-body">
                             <div class="control-bar">
                                 <button type="button" class="btn btn--primary" id="btnViewReport">VIEW REPORT</button>
                                 <button type="button" class="btn btn--primary" id="btnExportReport">EXPORT REPORT</button>
                             </div>
-                            <p class="control-feedback" id="reportFeedback" role="status" aria-live="polite">Report generation and export will be implemented in a later phase.</p>
+                            <p class="control-feedback" id="reportFeedback" role="status" aria-live="polite">View or export the current simulation report.</p>
                         </div>
                     </div>
                 </section>
