@@ -945,7 +945,6 @@ const Simulation = (function () {
         case 'CUT_POSITION_STUCK':Sensors.setCutPositionForce(value === undefined ? false : value); break;
         case 'OUT_OF_RANGE':      Sensors.setSpecimenOutOfRange(value || 'thickness'); break;
         case 'INTERLOCK_OPEN':    Sensors.setInterlockOpen(true); break;
-        case 'MISALIGNMENT':      Sensors.setSpecimenOutOfRange('alignment'); break;
         default: log('FAULT', 'Unknown fault injection: ' + what);
       }
     },
