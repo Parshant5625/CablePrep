@@ -351,7 +351,6 @@
                     }
                 }
                 if (raw.state === 'IDLE') {
-                if (raw.state === 'IDLE') {
                     if (typeof window.Simulation.loadCable === 'function') {
                         window.Simulation.loadCable();
                     }
