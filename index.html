@@ -507,16 +507,8 @@
                             <span class="panel-note">Integration point</span>
                         </div>
                         <div class="panel-body">
-                            <p class="panel-text">CURRENT: Person 1's live simulation publishes machineData() through js/machine-data.js. FALLBACK: mock provider is used only if the live simulation is unavailable. The HMI binding stays identical:</p>
-                            <pre class="code-block">CablePrep.App.updateMachineData({
-    state: "FEEDING",
-    position: 150,             // mm
-    speed: 100,                // mm/s
-    encoder: 750,
-    cableDetected: true,
-    aligned: true,
-    safetyOK: true
-});</pre>
+                            <p class="panel-text">LIVE DATA CONTRACT: Person 1's <code>Simulation.machineData()</code> is normalized by <code>js/machine-data.js</code> and consumed by the HMI. This panel shows the actual live normalized snapshot.</p>
+                            <pre class="code-block" id="machineDataPreview">Waiting for live machine data...</pre>
                         </div>
                     </div>
                 </section>
